@@ -14,6 +14,19 @@ DATA_PATH = "data.json"
 
 app = FastAPI()
 
+@app.get("/payments")
+async def get_all_payments():
+    """
+    Endpoint para obtener todos los pagos del sistema.
+    """
+    # Usamos la función helper que nos dieron en el código de referencia
+    # para cargar todos los pagos desde data.json
+    all_payments = load_all_payments()
+    
+    # FastAPI se encarga automáticamente de convertir
+    # este diccionario de Python a formato JSON
+    return all_payments
+
 
 def load_all_payments():
     with open(DATA_PATH, "r") as f:
@@ -46,13 +59,13 @@ def save_payment(payment_id, amount, payment_method, status):
     save_payment_data(payment_id, data)
 
 
-“””
+"""
 # Ejemplo de uso:
 # Actualizando el status de un pago:
 data = load_payment(payment_id)
 data[STATUS] = STATUS_PAGADO
 save_payment_data(payment_id, data)
-“””
+"""
 
 
 
@@ -64,7 +77,7 @@ save_payment_data(payment_id, data)
 # * POST en el path /payments/{payment_id}/revert que revertir el pago.
 
 
-“””
+"""
 # Ejemplos:
 
 @app.get("/path/{arg_1}")
@@ -76,4 +89,4 @@ async def endpoint_a(arg_1: str, arg_2: float):
 async def endpoint_b(arg_1: str, arg_2: float, arg_3: str):
     # Este es un endpoint POST que recibe un argumento (arg_1) por path y otros dos por query (arg_2 y arg_3).
     return {}
-“””
+"""
