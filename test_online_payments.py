@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 # Importamos todo desde 'online_payments'
 from online_payments import (
     app, 
+    save_payment,
     save_all_payments,
     STATUS, 
     AMOUNT, 
