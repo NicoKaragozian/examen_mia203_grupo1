@@ -139,3 +139,58 @@ class TestPaymentAPI(unittest.TestCase):
         # 3. Verificamos el error
         self.assertEqual(response.status_code, 400)
         self.assertIn("no está en estado 'REGISTRADO'", response.json()["detail"])
+
+    def test_pay_success_paypal(self):
+        """Test 8: PayPal válido (monto < 5000) debe ser PAGADO."""
+        self.client.post("/payments/p-ok?amount=4999&payment_method=PayPal")
+        response = self.client.post("/payments/p-ok/pay")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["new_status"], STATUS_PAGADO)
+        
+    def test_pay_fail_paypal_amount(self):
+        """Test 9: PayPal inválido (monto >= 5000) debe ser FALLIDO."""
+        self.client.post("/payments/p-fail?amount=5000&payment_method=PayPal")
+        response = self.client.post("/payments/p-fail/pay")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["new_status"], STATUS_FALLIDO)
+        
+    def test_pay_success_credit_card(self):
+        """Test 10: Tarjeta de Crédito válida (< 10k, único) debe ser PAGADO."""
+        self.client.post("/payments/cc-ok?amount=9999&payment_method=Tarjeta de Crédito")
+        response = self.client.post("/payments/cc-ok/pay")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["new_status"], STATUS_PAGADO)
+        
+    def test_pay_fail_credit_card_amount(self):
+        """Test 11: Tarjeta de Crédito inválida (monto >= 10k) debe ser FALLIDO."""
+        self.client.post("/payments/cc-fail-amt?amount=10000&payment_method=Tarjeta de Crédito")
+        response = self.client.post("/payments/cc-fail-amt/pay")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["new_status"], STATUS_FALLIDO)
+        
+    def test_pay_fail_credit_card_count(self):
+        """Test 12: Tarjeta de Crédito inválida (ya existe 1 REGISTRADO) debe ser FALLIDO."""
+        # 1. Creamos el primer pago (queda REGISTRADO)
+        self.client.post("/payments/cc-1?amount=100&payment_method=Tarjeta de Crédito")
+        # 2. Creamos el segundo pago (queda REGISTRADO)
+        self.client.post("/payments/cc-2?amount=200&payment_method=Tarjeta de Crédito")
+        # 3. Intentamos pagar el segundo. Debería fallar la regla de count.
+        response = self.client.post("/payments/cc-2/pay")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["new_status"], STATUS_FALLIDO)
+        
+    def test_pay_wrong_state(self):
+        """Test 13: Intentar pagar un pago que no está 'REGISTRADO' da error 400."""
+        self.client.post("/payments/p-pagado?amount=100&payment_method=PayPal")
+        self.client.post("/payments/p-pagado/pay") # Pasa a PAGADO
+        # Intentamos pagar de nuevo
+        response = self.client.post("/payments/p-pagado/pay")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Solo se puede pagar un pago en estado 'REGISTRADO'", response.json()["detail"])
+        
+    def test_pay_unknown_method(self):
+        """Test 14: Intentar pagar con un método desconocido da error 400."""
+        self.client.post("/payments/p-bitcoin?amount=100&payment_method=Bitcoin")
+        response = self.client.post("/payments/p-bitcoin/pay")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("no soportado o desconocido", response.json()["detail"])
