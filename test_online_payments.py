@@ -86,3 +86,55 @@ class TestPaymentAPI(unittest.TestCase):
         # 3. Verificamos el error
         self.assertEqual(response.status_code, 400)
         self.assertIn("no está en estado 'FALLIDO'", response.json()["detail"])
+
+    def test_update_payment_success(self):
+        """
+        Test 5: Verifica que se pueda actualizar un pago en estado 'REGISTRADO'.
+        """
+        # 1. Creamos un pago de prueba
+        self.client.post("/payments/pago-para-update?amount=100&payment_method=Test")
+        # 2. Lo actualizamos con nuevos datos
+        response = self.client.post(
+            "/payments/pago-para-update?amount=500.75&payment_method=NuevoMetodo"
+        )
+        # 3. Verificamos la respuesta
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Pago actualizado exitosamente", response.json()["message"])
+        # 4. Verificamos que los datos se guardaron
+        response_get = self.client.get("/payments/pago-para-update") # Asumiendo que GET /id existe o usamos GET /
+        # (Usamos GET /payments ya que GET /id no está en la consigna)
+        response_get_all = self.client.get("/payments")
+        all_payments = response_get_all.json()
+        updated_payment = all_payments["pago-para-update"]
+        self.assertEqual(updated_payment[AMOUNT], 500.75)
+        self.assertEqual(updated_payment[PAYMENT_METHOD], "NuevoMetodo")
+        
+    def test_update_payment_not_found(self):
+        """
+        Test 6: Verifica error 404 al actualizar un ID inexistente.
+        """
+        response = self.client.post(
+            "/payments/id-no-existe/update?amount=1&payment_method=X"
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("no encontrado", response.json()["detail"])
+        
+    def test_update_payment_wrong_state(self):
+        """
+        Test 7: Verifica error 400 al actualizar un pago que NO está 'REGISTRADO'.
+        """
+        # 1. Forzamos la creación de un pago en estado 'FALLIDO'
+        #    Usamos la función helper 'save_payment' directamente
+        save_payment(
+            payment_id="pago-fallido",
+            amount=100,
+            payment_method="Test",
+            status=STATUS_FALLIDO
+        )
+        # 2. Intentamos actualizarlo
+        response = self.client.post(
+            "/payments/pago-fallido/update?amount=200&payment_method=New"
+        )
+        # 3. Verificamos el error
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("no está en estado 'REGISTRADO'", response.json()["detail"])
