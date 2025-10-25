@@ -1,7 +1,1 @@
-{
-    "pago_001": {
-        "amount": 100.0,
-        "payment_method": "Tarjeta de credito",
-        "status": "REGISTRADO"
-    }
-}
+{}
