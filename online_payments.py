@@ -94,6 +94,45 @@ async def revert_payment(payment_id: str):
         "new_status": STATUS_REGISTRADO
     }
 
+@app.post("/payments/{payment_id}/update")
+async def update_payment(payment_id: str, amount: float, payment_method: str):
+    """
+    Endpoint para actualizar la información de un pago existente.
+    Solo funciona si el pago está en estado 'REGISTRADO'.
+    """
+   
+    # 1. Cargar los datos del pago
+    try:
+        payment_data = load_payment(payment_id)
+    except KeyError:
+        # Si el ID no existe, devolvemos 404
+        raise HTTPException(status_code=404, detail=f"Pago con id '{payment_id}' no encontrado.")
+
+    current_status = payment_data.get(STATUS)
+
+    # 2. Validar el estado (Lógica de Estado)
+    # Verificamos si el estado actual es 'REGISTRADO'
+    if current_status != STATUS_REGISTRADO:
+        # Si no es 'REGISTRADO', devolvemos un error 400 (Bad Request)
+        # No podemos modificar un pago que ya fue pagado o falló.
+        raise HTTPException(
+            status_code=400,
+            detail=f"No se puede actualizar un pago que no está en estado 'REGISTRADO'. Estado actual: {current_status}"
+        )
+
+    # 3. Actualizar los datos
+    payment_data[AMOUNT] = amount
+    payment_data[PAYMENT_METHOD] = payment_method
+   
+    # 4. Guardar los cambios
+    save_payment_data(payment_id, payment_data)
+
+    return {
+        "message": "Pago actualizado exitosamente",
+        "payment_id": payment_id,
+        "new_data": payment_data
+    }
+
 def load_all_payments():
     with open(DATA_PATH, "r") as f:
         data = json.load(f)
