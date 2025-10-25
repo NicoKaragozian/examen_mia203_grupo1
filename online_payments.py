@@ -133,6 +133,53 @@ async def update_payment(payment_id: str, amount: float, payment_method: str):
         "new_data": payment_data
     }
 
+@app.post("/payments/{payment_id}/pay")
+async def pay_payment(payment_id: str):
+    """
+    Endpoint para procesar un pago.
+    Valida y marca como PAGADO o FALLIDO. Utiliza el Patrón Strategy.
+    """
+    # 1. Cargar pago (y verificar 404)
+    try:
+        payment_data = load_payment(payment_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"Pago con id '{payment_id}' no encontrado.")
+    # 2. State Guard: Solo podemos pagar un pago 'REGISTRADO'
+    current_status = payment_data.get(STATUS)
+    if current_status != STATUS_REGISTRADO:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Solo se puede pagar un pago en estado 'REGISTRADO'. Estado actual: {current_status}"
+        )
+    # 3. Cargar TODOS los pagos (necesario para la regla de Tarjeta de Crédito)
+    all_payments = load_all_payments()
+    # 4. Seleccionar la Estrategia
+    payment_method = payment_data.get(PAYMENT_METHOD)
+    strategy = PAYMENT_STRATEGIES.get(payment_method)
+    # Si el método no es "Tarjeta de Crédito" ni "PayPal", no tenemos estrategia
+    if not strategy:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Método de pago '{payment_method}' no soportado o desconocido."
+        )
+    # 5. Ejecutar la Estrategia
+    # El flujo de pago depende de esta validación
+    is_valid = strategy.validate(payment_data, all_payments)
+    # 6. Actualizar Estado (PAGADO o FALLIDO)
+    if is_valid:
+        new_status = STATUS_PAGADO
+        message = "Pago procesado y aprobado exitosamente."
+    else:
+        new_status = STATUS_FALLIDO
+        message = "Pago fallido. La validación no pasó."
+    payment_data[STATUS] = new_status
+    save_payment_data(payment_id, payment_data)
+    return {
+        "message": message,
+        "payment_id": payment_id,
+        "new_status": new_status
+    }
+
 def load_all_payments():
     with open(DATA_PATH, "r") as f:
         data = json.load(f)
