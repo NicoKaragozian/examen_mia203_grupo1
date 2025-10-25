@@ -27,6 +27,31 @@ async def get_all_payments():
     # este diccionario de Python a formato JSON
     return all_payments
 
+@app.post("/payments/{payment_id}")
+async def register_payment(payment_id: str, amount: float, payment_method: str):
+    """
+    Endpoint para registrar un nuevo pago en el sistema.
+    El pago se crea en estado 'REGISTRADO'.
+    """
+    
+    # Usamos la función helper 'save_payment' que nos dio el código de referencia.
+    # Le pasamos los datos recibidos y el estado inicial fijo.
+    save_payment(
+        payment_id=payment_id,
+        amount=amount,
+        payment_method=payment_method,
+        status=STATUS_REGISTRADO  # Usamos la constante del código base
+    )
+    
+    # Devolvemos un mensaje de éxito y los datos guardados.
+    return {
+        "message": "Pago registrado exitosamente",
+        "payment_id": payment_id,
+        "amount": amount,
+        "payment_method": payment_method,
+        "status": STATUS_REGISTRADO
+    }
+
 
 def load_all_payments():
     with open(DATA_PATH, "r") as f:
