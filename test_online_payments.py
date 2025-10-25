@@ -96,7 +96,7 @@ class TestPaymentAPI(unittest.TestCase):
         self.client.post("/payments/pago-para-update?amount=100&payment_method=Test")
         # 2. Lo actualizamos con nuevos datos
         response = self.client.post(
-            "/payments/pago-para-update?amount=500.75&payment_method=NuevoMetodo"
+            "/payments/pago-para-update/update?amount=500.75&payment_method=NuevoMetodo"
         )
         # 3. Verificamos la respuesta
         self.assertEqual(response.status_code, 200)
