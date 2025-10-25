@@ -11,7 +11,8 @@ from online_payments import (
     AMOUNT, 
     PAYMENT_METHOD,
     STATUS_REGISTRADO,
-    STATUS_FALLIDO
+    STATUS_FALLIDO,
+    STATUS_PAGADO
 )
 
 # Creamos una clase que hereda de unittest.TestCase
