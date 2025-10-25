@@ -1,4 +1,5 @@
 import json
+import abc
 
 from fastapi import FastAPI, HTTPException
 
@@ -11,6 +12,51 @@ STATUS_PAGADO = "PAGADO"
 STATUS_FALLIDO = "FALLIDO"
 
 DATA_PATH = "data.json"
+
+class PaymentStrategy(abc.ABC):
+    """
+    Interfaz abstracta (Patrón Strategy) para una estrategia de validación de pago.
+    """
+    @abc.abstractmethod
+    def validate(self, payment_data: dict, all_payments: dict) -> bool:
+        """
+        Valida un pago. Devuelve True si es válido, False si no.
+        """
+        pass
+        
+class CreditCardStrategy(PaymentStrategy):
+    """
+    Estrategia de validación para "Tarjeta de Crédito".
+    """
+    def validate(self, payment_data: dict, all_payments: dict) -> bool:
+        # [cite_start]Regla 1: Verifica que el pago sea menor a $10.000 [cite: 1228]
+        rule_amount = payment_data.get(AMOUNT, 0) < 10000
+        # [cite_start]Regla 2: Valida que no haya más de 1 pago... en estado "REGISTRADO" [cite: 1229]
+        # Contamos cuántos pagos (incluyendo este) están 'REGISTRADO'
+        # con 'Tarjeta de Crédito'.
+        registered_count = 0
+        for payment in all_payments.values():
+            if (payment.get(PAYMENT_METHOD) == "Tarjeta de Crédito" and
+                payment.get(STATUS) == STATUS_REGISTRADO):
+                registered_count += 1
+        # La regla dice "no haya más de 1".
+        # Si el conteo es 1 (solo este pago), pasa.
+        # Si es 2 o más (este pago + otro ya registrado), falla.
+        rule_count = (registered_count <= 1)
+        return rule_amount and rule_count
+class PayPalStrategy(PaymentStrategy):
+    """
+    Estrategia de validación para "PayPal".
+    """
+    def validate(self, payment_data: dict, all_payments: dict) -> bool:
+        # [cite_start]Regla 1: Verifica que el pago sea menor de $5000 [cite: 1233]
+        rule_amount = payment_data.get(AMOUNT, 0) < 5000
+        return rule_amount
+
+PAYMENT_STRATEGIES = {
+    "Tarjeta de Crédito": CreditCardStrategy(),
+    "PayPal": PayPalStrategy()
+}
 
 app = FastAPI()
 
@@ -209,7 +255,6 @@ def save_payment(payment_id, amount, payment_method, status):
         STATUS: status,
     }
     save_payment_data(payment_id, data)
-
 
 """
 # Ejemplo de uso:
