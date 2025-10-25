@@ -1,0 +1,41 @@
+name: Python CI (Unit Tests)
+
+# Disparador (trigger)
+on:
+  # Correrá en cada push a cualquier branch (bueno para verificar)
+  push:
+    branches:
+      - "**"  # "**" significa "cualquier branch"
+  
+  # Corre en cada Pull Request que apunte al branch 'main'
+  pull_request:
+    branches:
+      - "main"
+
+# Trabajos (jobs)
+jobs:
+  # Definimos un único trabajo (job) llamado 'build-and-test'
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # Pasos
+    steps:
+      # 1. Checkout (Descargar el código)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setup Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Run tests
+      - name: Run unit tests
+        run: python -m unittest
