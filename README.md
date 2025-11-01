@@ -34,20 +34,20 @@ python -m unittest
 
 ### 3.1. Patrón Strategy (Validación de Pagos)
 
-* [cite_start]**Decisión:** Se usó el Patrón **Strategy** para manejar las lógicas de validación (`PayPal` vs. `Tarjeta de Crédito`)[cite: 529, 977, 978].
+* **Decisión:** Se usó el Patrón **Strategy** para manejar las lógicas de validación (`PayPal` vs. `Tarjeta de Crédito`)[cite: 529, 977, 978].
 * **Implementación:** Se creó una interfaz `PaymentStrategy` y clases concretas (`CreditCardStrategy`, `PayPalStrategy`). Un diccionario selecciona la estrategia en tiempo de ejecución.
-* [cite_start]**Trade-off:** Permite añadir nuevos métodos de pago (ej. "MercadoPago") sin modificar el *endpoint* `/pay` (cumpliendo el **Principio Abierto/Cerrado** [cite: 1335]). [cite_start]A cambio, añade más clases al proyecto[cite: 980].
+* **Trade-off:** Permite añadir nuevos métodos de pago (ej. "MercadoPago") sin modificar el *endpoint* `/pay` (cumpliendo el **Principio Abierto/Cerrado** [cite: 1335]). [cite_start]A cambio, añade más clases al proyecto[cite: 980].
 
 ### 3.2. Manejo de Estados ("State Guards")
 
-* [cite_start]**Decisión:** **No** se implementó el Patrón **State** formal (con clases de estado) para `REGISTRADO`, `PAGADO` y `FALLIDO`[cite: 941, 942].
+* **Decisión:** **No** se implementó el Patrón **State** formal (con clases de estado) para `REGISTRADO`, `PAGADO` y `FALLIDO`[cite: 941, 942].
 * **Implementación:** Se usaron "Guardias de Estado" (`if current_status != ...`) en los *endpoints* `/update`, `/revert` y `/pay`.
-* [cite_start]**Trade-off:** Se priorizó la **simplicidad (Principio KISS)** [cite: 1332] sobre un patrón formal que habría sido excesivo. La lógica de transición está distribuida, lo cual no escalaría bien si los flujos de estado fuesen más complejos.
+* **Trade-off:** Se priorizó la **simplicidad (Principio KISS)** [cite: 1332] sobre un patrón formal que habría sido excesivo. La lógica de transición está distribuida, lo cual no escalaría bien si los flujos de estado fuesen más complejos.
 
 ### 3.3. Framework de Testing
 
 * **Decisión:** Se utilizó **`unittest`** (nativo de Python).
-* **Trade-off:** No requiere dependencias externas. [cite_start]La función `setUp` se usó para limpiar `data.json` antes de cada test, garantizando la **independencia de los tests**[cite: 476, 479].
+* **Trade-off:** No requiere dependencias externas. La función `setUp` se usó para limpiar `data.json` antes de cada test, garantizando la **independencia de los tests**.
 
 ### 3.4. Manejo de Errores de API
 
