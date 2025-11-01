@@ -42,7 +42,7 @@ python -m unittest
 
 * **Decisión:** **No** se implementó el Patrón **State** formal (con clases de estado) para `REGISTRADO`, `PAGADO` y `FALLIDO`[cite: 941, 942].
 * **Implementación:** Se usaron "Guardias de Estado" (`if current_status != ...`) en los *endpoints* `/update`, `/revert` y `/pay`.
-* **Trade-off:** Se priorizó la **simplicidad (Principio KISS)** [cite: 1332] sobre un patrón formal que habría sido excesivo. La lógica de transición está distribuida, lo cual no escalaría bien si los flujos de estado fuesen más complejos.
+* **Trade-off:** Se priorizó la **simplicidad (Principio KISS)** sobre un patrón formal que habría sido excesivo. La lógica de transición está distribuida, lo cual no escalaría bien si los flujos de estado fuesen más complejos.
 
 ### 3.3. Framework de Testing
 
