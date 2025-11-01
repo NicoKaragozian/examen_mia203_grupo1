@@ -34,9 +34,9 @@ python -m unittest
 
 ### 3.1. Patrón Strategy (Validación de Pagos)
 
-* **Decisión:** Se usó el Patrón **Strategy** para manejar las lógicas de validación (`PayPal` vs. `Tarjeta de Crédito`)[cite: 529, 977, 978].
+* **Decisión:** Se usó el Patrón **Strategy** para manejar las lógicas de validación (`PayPal` vs. `Tarjeta de Crédito`).
 * **Implementación:** Se creó una interfaz `PaymentStrategy` y clases concretas (`CreditCardStrategy`, `PayPalStrategy`). Un diccionario selecciona la estrategia en tiempo de ejecución.
-* **Trade-off:** Permite añadir nuevos métodos de pago (ej. "MercadoPago") sin modificar el *endpoint* `/pay` (cumpliendo el **Principio Abierto/Cerrado** [cite: 1335]). A cambio, añade más clases al proyectos.
+* **Trade-off:** Permite añadir nuevos métodos de pago (ej. "MercadoPago") sin modificar el *endpoint* `/pay` (cumpliendo el **Principio Abierto/Cerrado**. A cambio, añade más clases al proyectos.
 
 ### 3.2. Manejo de Estados ("State Guards")
 
