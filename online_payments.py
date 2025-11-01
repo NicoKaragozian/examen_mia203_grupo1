@@ -227,8 +227,15 @@ async def pay_payment(payment_id: str):
     }
 
 def load_all_payments():
-    with open(DATA_PATH, "r") as f:
-        data = json.load(f)
+    # Si el archivo no existe, lo creamos vacío
+    try:
+        with open(DATA_PATH, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        # Crear archivo vacío si no existe
+        with open(DATA_PATH, "w") as f:
+            json.dump({}, f)
+        data = {}
     return data
 
 
