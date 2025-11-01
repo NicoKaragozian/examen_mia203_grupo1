@@ -84,5 +84,96 @@ graph TD
 
 ## 6. CI/CD
 
-* **Integración Continua (CI):** Se configuró **GitHub Actions** (`.github/workflows/ci.yml`). Este flujo ejecuta automáticamente `python -m unittest` en cada PR a `main`, asegurando que el código que se fusione haya pasado los tests.
-* **Entrega Continua (CD):** Se configuró un segundo *workflow* de GitHub Actions (`.github/workflows/cd.yml`) que se encarga de disparar un *Deploy Hook* de Render automáticamente cada vez que se hace `push` al *branch* `production`.
+* **Integración Continua (CI):** Se configuró **GitHub Actions** (`.github/workflows/ci_pipeline.yml`). Este flujo ejecuta automáticamente `python -m unittest` en cada PR a `main`, asegurando que el código que se fusione haya pasado los tests.
+* **Entrega Continua (CD):** Se configuró un segundo *workflow* de GitHub Actions (`.github/workflows/cd_release.yml`) que se encarga de disparar un *Deploy Hook* de Render automáticamente cada vez que se hace `push` al *branch* `production`.
+
+### Configuración del Secret para CD
+
+Para que el deployment automático funcione, es necesario configurar el secret en GitHub:
+
+1. Ir a **Settings → Secrets and variables → Actions** en el repositorio de GitHub
+2. Crear un nuevo secret llamado `RENDER_DEPLOY_HOOK_URL`
+3. Obtener el Deploy Hook URL desde el dashboard de Render (Settings → Deploy Hook)
+4. Pegar la URL como valor del secret
+
+Una vez configurado, cada push al branch `production` disparará automáticamente un deployment.
+
+## 7. Diagrama del Patrón Strategy
+
+El siguiente diagrama ilustra cómo se implementó el Patrón Strategy para las validaciones de pago:
+
+```mermaid
+classDiagram
+    class PaymentStrategy {
+        <<abstract>>
+        +validate(payment_data, all_payments) bool
+    }
+    
+    class CreditCardStrategy {
+        +validate(payment_data, all_payments) bool
+    }
+    
+    class PayPalStrategy {
+        +validate(payment_data, all_payments) bool
+    }
+    
+    class PaymentEndpoint {
+        +pay_payment(payment_id)
+    }
+    
+    PaymentStrategy <|-- CreditCardStrategy : implementa
+    PaymentStrategy <|-- PayPalStrategy : implementa
+    PaymentEndpoint --> PaymentStrategy : usa
+    
+    note for CreditCardStrategy "Valida:\n- Monto < $10,000\n- Max 1 REGISTRADO"
+    note for PayPalStrategy "Valida:\n- Monto < $5,000"
+```
+
+**Beneficios del patrón:**
+- Nuevos métodos de pago se pueden agregar sin modificar el endpoint `/pay`
+- Cada estrategia encapsula su propia lógica de validación
+- Fácil de testear cada validación de forma independiente
+
+## 8. Estrategia de Testing
+
+### Tipos de Tests Implementados
+
+**Tests de funcionalidad básica (5 tests):**
+- GET /payments con base vacía y con datos
+- POST para registrar pagos
+- Validaciones de errores 404 y 400
+
+**Tests de validación de PayPal (2 tests):**
+- Pago válido con monto < $5000 → PAGADO
+- Pago inválido con monto ≥ $5000 → FALLIDO
+
+**Tests de validación de Tarjeta de Crédito (3 tests):**
+- Pago válido (< $10000 y único) → PAGADO
+- Pago inválido por monto (≥ $10000) → FALLIDO
+- Pago inválido por ya existir 1 REGISTRADO → FALLIDO
+
+**Tests de flujo de estados (4 tests):**
+- Update solo funciona en estado REGISTRADO
+- Revert solo funciona en estado FALLIDO
+- Pay solo funciona en estado REGISTRADO
+- Pay con método desconocido da error
+
+**Total: 14 tests** cubriendo casos normales, casos de error y validaciones de reglas de negocio.
+
+### Independencia de Tests
+
+Cada test usa `setUp()` para limpiar `data.json`, garantizando que:
+- Los tests no tienen dependencias entre sí
+- Se pueden ejecutar en cualquier orden
+- Los resultados son reproducibles
+
+## 10. Principios de Diseño Aplicados
+
+### SOLID
+- **Single Responsibility:** Cada clase tiene una responsabilidad única (ej: `CreditCardStrategy` solo valida tarjetas)
+- **Open/Closed:** Se pueden agregar nuevos métodos de pago sin modificar código existente
+- **Dependency Inversion:** El endpoint depende de la abstracción `PaymentStrategy`, no de implementaciones concretas
+
+### Otros Principios
+- **KISS (Keep It Simple):** Se evitó sobre-ingeniería (ej: no se usó Patrón State formal)
+- **DRY (Don't Repeat Yourself):** Funciones helper reutilizables (`load_payment`, `save_payment`)
